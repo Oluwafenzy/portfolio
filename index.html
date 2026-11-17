@@ -443,10 +443,13 @@ $('#links').innerHTML=[
   ['WhatsApp','','https://wa.me/2349016640950'],['Behance','','https://www.behance.net/fenzy'],['LinkedIn','','https://www.linkedin.com/in/feranmi-adesokan-8985b0314/'],['Instagram','','https://www.instagram.com/oluwafenzyy/']
 ].map(([n,v,h])=>`<li><a href="${h}"${h.startsWith('http')?' target="_blank" rel="noopener noreferrer"':''}><svg class="ic" viewBox="0 0 20 20">${IC[n]}</svg><b style="font-weight:400">${n}</b>${v?`<span>${v}</span>`:''}${chev}</a></li>`).join('');
 
-// Where messages go. When you host this page yourself, paste a form-service endpoint
-// (Formspree, Web3Forms, Basin...) here and messages are emailed to you directly.
-// Left empty, the form opens the visitor's email app, pre-filled, instead.
+// Where messages go. Choose ONE:
+//  - Web3Forms: paste your free access key from web3forms.com into FORM_KEY.
+//  - Formspree (or similar): paste the form URL into FORM_ENDPOINT.
+// With both left empty, the form opens the visitor's email app, pre-filled, instead.
+const FORM_KEY='aa0ea7a4-dcf7-49b9-a1c0-7a03d3776e3c';
 const FORM_ENDPOINT='';
+const ENDPOINT=FORM_ENDPOINT||(FORM_KEY?'https://api.web3forms.com/submit':'');
 const TO='oluwaferanmiadesokan2004@gmail.com';
 $('#form').addEventListener('submit',async e=>{
   e.preventDefault();
@@ -455,15 +458,15 @@ $('#form').addEventListener('submit',async e=>{
   st.className='status';
   if($('#hp').value)return;
   if(!d.name||!/^\S+@\S+\.\S+$/.test(d.email)){st.textContent='Please add your name and a valid email address.';st.classList.add('err');return}
-  if(!FORM_ENDPOINT){
+  if(!ENDPOINT){
     location.href=`mailto:${TO}?subject=${encodeURIComponent('Project enquiry from '+d.name)}&body=${encodeURIComponent(d.message+'\n\n— '+d.name+' ('+d.email+')')}`;
     st.textContent='Opening your email app… if nothing opens, write to '+TO+'.';
     return;
   }
   btn.disabled=true;btn.textContent='Sending…';
   try{
-    const r=await fetch(FORM_ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify(d)});
-    if(!r.ok)throw new Error('bad status');
+    const r=await fetch(ENDPOINT,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify(FORM_KEY?{access_key:FORM_KEY,subject:'New enquiry from '+d.name,from_name:'Portfolio website',...d}:d)});
+    const j=await r.json().catch(()=>({}));if(!r.ok||j.success===false)throw new Error('bad status');
     f.reset();st.textContent='Thanks, '+d.name.split(' ')[0]+' — your message is on its way.';st.classList.add('ok');
   }catch(_){st.textContent='Couldn’t send that. Please try again or email '+TO+'.';st.classList.add('err')}
   btn.disabled=false;btn.textContent='Submit';
